@@ -3,3 +3,4 @@ requires 'JSON';
 requires 'Path::Tiny';
 requires 'DateTime';
 requires 'DateTime::Format::Strptime';
+requires 'LWP::UserAgent';
