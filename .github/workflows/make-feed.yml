@@ -1,10 +1,13 @@
 name: Build Trakt Feed
 
 on:
-  # Doesn't work because of traktexport's silly refresh method
-  # schedule:
-  #  - cron: '0 */2 * * *'  # Every two hours
+  schedule:
+    - cron: '0 */2 * * *'
   workflow_dispatch:
+
+concurrency:
+  group: trakt-feed-pages
+  cancel-in-progress: false
 
 jobs:
   export-and-generate-feed:
@@ -15,37 +18,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          pip install traktexport feedgen
-
-      - name: Restore Traktexport credentials
-        run: |
-          mkdir -p ~/.local/share
-          echo '${{ secrets.TRAKTEXPORT_AUTH }}' > ~/.local/share/traktexport.json
-
-      - name: Export Trakt history
-        run: traktexport partial_export ${{ secrets.TRAKTUSERNAME }} --pages 1 > history.json
-
-      - name: Install cpanm
+      - name: Install Perl dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cpanminus 
+          sudo apt-get install -y cpanminus
+          sudo cpanm --installdeps --notest .
 
-      - name: Install modules
-        run: cpanm --sudo --installdeps --notest .
+      - name: Fetch Trakt episode history
+        env:
+          TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+        run: perl bin/get-history > history.json
 
-      - name: Generate RSS feed
+      - name: Generate Atom feed
         run: |
-          mkdir docs
-          bin/mkfeed > docs/feed.xml
+          mkdir -p docs
+          perl bin/mkfeed history.json > docs/feed.xml
+          test -s docs/feed.xml
 
-      - name: Upload RSS feed to Pages artifact
+      - name: Upload feed to Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/
@@ -63,4 +53,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
