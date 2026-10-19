@@ -1,0 +1,27 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use JSON qw(decode_json encode_json);
+use LWP::UserAgent;
+
+my $client_id = $ENV{TRAKT_CLIENT_ID}
+  or die "TRAKT_CLIENT_ID environment variable is required\n";
+my $username = $ENV{TRAKT_USERNAME} || 'davorg';
+my $limit = 20;
+
+my $ua = LWP::UserAgent->new(
+  agent => 'trakt2feed/2.0',
+  timeout => 30,
+);
+my $url = "https://api.trakt.tv/users/$username/history/episodes?limit=$limit";
+my $response = $ua->get($url,
+  'trakt-api-version' => '2',
+  'trakt-api-key' => $client_id,
+  Accept => 'application/json',
+);
+die "Trakt API request failed: " . $response->status_line . "\n"
+  unless $response->is_success;
+my $history = decode_json($response->decoded_content);
+die "Expected a non-empty JSON array of episodes from Trakt\n"
+  unless ref($history) eq 'ARRAY' && @$history;
+print encode_json($history), "\n";
