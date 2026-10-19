@@ -39,6 +39,7 @@ jobs:
         uses: davorg/readme-to-index@v1
         with:
           output: docs/index.html
+          google_analytics: G-YJCYWQFHGB
 
       - name: Upload feed to Pages artifact
         uses: actions/upload-pages-artifact@v3
