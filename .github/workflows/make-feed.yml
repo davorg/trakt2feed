@@ -35,6 +35,11 @@ jobs:
           perl bin/mkfeed history.json > docs/feed.xml
           test -s docs/feed.xml
 
+      - name: README to index
+        uses: davorg/readme-to-index@v1
+        with:
+          output: docs/index.html
+
       - name: Upload feed to Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
